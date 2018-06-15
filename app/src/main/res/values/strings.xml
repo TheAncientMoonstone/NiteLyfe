@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Nite Lyfe</string>
+    <string name="facebook_app_id">658014727714039</string>
+    <string name="fb_login_protocol_scheme">fb658014727714039</string>
 </resources>

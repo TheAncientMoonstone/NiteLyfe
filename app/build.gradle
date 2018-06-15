@@ -30,8 +30,14 @@ dependencies {
     implementation('com.amazonaws:aws-android-sdk-mobile-client:2.6.+@aar') { transitive = true }
 
     // Cognito User Pools for Sign In.
+    implementation 'com.android.support:support-v4:27.+'
     implementation('com.amazonaws:aws-android-sdk-auth-userpools:2.6.+@aar') { transitive = true }
 
     // Sign in UI Library.
+    implementation 'com.android.support:support-v4:27.+'
     implementation('com.amazonaws:aws-android-sdk-auth-ui:2.6.+@aar') { transitive = true }
+
+    // Facebook Sign In SDK
+    implementation 'com.android.support:support-v4:27.+'
+    implementation('com.amazonaws:aws-android-sdk-auth-facebook:2.6.+@aar') { transitive = true }
 }
