@@ -6,4 +6,30 @@
     android:layout_height="match_parent"
     tools:context=".AuthenticationActivity">
 
+    <EditText
+        android:id="@+id/PasswordField"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textPassword"
+        tools:layout_editor_absoluteX="85dp"
+        tools:layout_editor_absoluteY="142dp" />
+
+    <Button
+        android:id="@+id/SignInButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SignIn"
+        tools:layout_editor_absoluteX="147dp"
+        tools:layout_editor_absoluteY="230dp" />
+
+    <EditText
+        android:id="@+id/UsernameField"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text="Username"
+        tools:layout_editor_absoluteX="83dp"
+        tools:layout_editor_absoluteY="84dp" />
 </android.support.constraint.ConstraintLayout>
