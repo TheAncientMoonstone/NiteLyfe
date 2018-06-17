@@ -13,6 +13,10 @@ import com.amazonaws.mobile.client.AWSStartupResult;
 
 public class SplashActivity extends AppCompatActivity {
 
+    /*
+     * This is used to load the app when the user has already logged into the app.
+     */
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

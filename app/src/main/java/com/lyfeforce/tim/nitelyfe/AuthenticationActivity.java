@@ -2,10 +2,8 @@ package com.lyfeforce.tim.nitelyfe;
 
 
 import android.content.Intent;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -22,6 +20,9 @@ import com.lyfeforce.tim.nitelyfe.AWS.AWSLoginModel;
 import static java.sql.DriverManager.println;
 
 public class AuthenticationActivity extends AppCompatActivity implements View.OnClickListener, AWSLoginHandler {
+    /*
+     * This handles the user authentication before they can use the app.
+     */
 
     // AWS Logic
     AWSLoginModel awsLoginModel;
