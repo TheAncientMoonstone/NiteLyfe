@@ -27,4 +27,10 @@ public class MainActivity extends AppCompatActivity {
         TextView hello = findViewById(R.id.hello);
         hello.setText("Hello" + who + "!");
     }
+
+    // Stops the user from going back to the splash screen.
+    @Override
+    public void onBackPressed() {
+        moveTaskToBack(true);
+    }
 }

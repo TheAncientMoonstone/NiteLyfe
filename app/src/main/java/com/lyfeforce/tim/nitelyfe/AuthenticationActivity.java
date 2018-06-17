@@ -1,6 +1,5 @@
 package com.lyfeforce.tim.nitelyfe;
 
-
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -10,10 +9,6 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 
-import com.amazonaws.mobile.auth.ui.SignInUI;
-import com.amazonaws.mobile.client.AWSMobileClient;
-import com.amazonaws.mobile.client.AWSStartupHandler;
-import com.amazonaws.mobile.client.AWSStartupResult;
 import com.lyfeforce.tim.nitelyfe.AWS.AWSLoginHandler;
 import com.lyfeforce.tim.nitelyfe.AWS.AWSLoginModel;
 
@@ -46,17 +41,6 @@ public class AuthenticationActivity extends AppCompatActivity implements View.On
 
         findViewById(R.id.SignInButton).setOnClickListener(this);
 
-/*
-        AWSMobileClient.getInstance().initialize(this, new AWSStartupHandler() {
-            @Override
-            public void onComplete(AWSStartupResult awsStartupResult) {
-
-               SignInUI signin = (SignInUI) AWSMobileClient.getInstance().getClient(AuthenticationActivity.this, SignInUI.class);
-                signin.login(AuthenticationActivity.this, MainActivity.class).execute();
-
-            }
-        }).execute();
-*/
     }
 
     @Override

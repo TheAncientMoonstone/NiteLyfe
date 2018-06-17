@@ -1,6 +1,7 @@
 package com.lyfeforce.tim.nitelyfe;
 
 import android.content.Intent;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -22,6 +23,7 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
+        /*
         // Calls the AWSMobileClient and initialises it in the app.
         AWSMobileClient.getInstance().initialize(SplashActivity.this, new AWSStartupHandler() {
             @Override
@@ -35,6 +37,30 @@ public class SplashActivity extends AppCompatActivity {
                         } else {
                             startActivity(new Intent(SplashActivity.this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
                         }
+                    }
+                }, 300);
+            }
+        }).execute();
+    }
+    */
+
+        AWSMobileClient.getInstance().initialize(SplashActivity.this, new AWSStartupHandler() {
+            @Override
+            public void onComplete(AWSStartupResult awsStartupResult) {
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        IdentityManager identityManager = IdentityManager.getDefaultIdentityManager();
+                        identityManager.resumeSession(SplashActivity.this, new StartupAuthResultHandler() {
+                            @Override
+                            public void onComplete(StartupAuthResult authResults) {
+                                if (authResults.isUserSignedIn()) {
+                                    startActivity(new Intent (SplashActivity.this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                                } else {
+                                    startActivity(new Intent (SplashActivity.this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                                }
+                            }
+                        }, 300);
                     }
                 }, 300);
             }
