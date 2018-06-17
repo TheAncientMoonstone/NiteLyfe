@@ -1,29 +1,35 @@
 package com.lyfeforce.tim.nitelyfe.AWS;
 
-import android.content.Context;
-import android.content.SharedPreferences;
+        import android.content.Context;
+        import android.content.SharedPreferences;
 
-import com.amazonaws.mobile.auth.core.IdentityManager;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoDevice;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUser;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttributes;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserCodeDeliveryDetails;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserDetails;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserPool;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserSession;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.AuthenticationContinuation;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.AuthenticationDetails;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.ChallengeContinuation;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.MultiFactorAuthenticationContinuation;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.AuthenticationHandler;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GenericHandler;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GetDetailsHandler;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.SignUpHandler;
-import com.amazonaws.regions.Regions;
-import com.lyfeforce.tim.nitelyfe.AuthenticationActivity;
+        import com.amazonaws.mobile.auth.core.IdentityManager;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoDevice;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUser;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttributes;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserCodeDeliveryDetails;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserDetails;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserPool;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserSession;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.AuthenticationContinuation;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.AuthenticationDetails;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.ChallengeContinuation;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.ForgotPasswordContinuation;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.MultiFactorAuthenticationContinuation;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.AuthenticationHandler;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.ForgotPasswordHandler;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GenericHandler;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GetDetailsHandler;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.SignUpHandler;
+        import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.VerificationHandler;
+        import com.amazonaws.regions.Regions;
+        import com.amazonaws.services.cognitoidentityprovider.model.InvalidParameterException;
+        import com.amazonaws.services.cognitoidentityprovider.model.LimitExceededException;
+        import com.amazonaws.services.cognitoidentityprovider.model.UserNotFoundException;
+        import com.lyfeforce.tim.nitelyfe.AuthenticationActivity;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+        import org.json.JSONException;
+        import org.json.JSONObject;
 
 /**
  * This represents a model for login operations on AWS Mobile Hub. It manages login operations
@@ -37,20 +43,41 @@ import org.json.JSONObject;
  */
 @SuppressWarnings("unused")
 public class AWSLoginModel {
+
     // constants
+    // AWS attributes
     private final String ATTR_EMAIL = "email";
+    private final String ATTR_USERNAME = "preferred_username";
+    // saved values on shared preferences
     private static final String SHARED_PREFERENCE = "SavedValues";
     private static final String PREFERENCE_USER_NAME = "awsUserName";
     private static final String PREFERENCE_USER_EMAIL = "awsUserEmail";
+    // message errors used in more than one place
+    private static final String MESSAGE_UNKNOWN_ERROR = "Unknown error. Check internet connection.";
+    private static final String MESSAGE_USER_NOT_FOUND = "User does not exist.";
+    // current process requested
     public static final int PROCESS_SIGN_IN = 1;
-    public static final int PROCESS_REGISTER = 2;
+    private static final int PROCESS_REGISTER = 2;
     public static final int PROCESS_CONFIRM_REGISTRATION = 3;
+    public static final int PROCESS_RESEND_CONFIRMATION_CODE = 4;
+    public static final int PROCESS_REQUEST_RESET_PASSWORD = 5;
+    public static final int PROCESS_RESET_PASSWORD = 6;
+    // error causes
+    public static final int CAUSE_MUST_CONFIRM_FIRST = 1;
+    public static final int CAUSE_USER_NOT_FOUND = 2;
+    public static final int CAUSE_INCORRECT_PASSWORD = 3;
+    public static final int CAUSE_LIMIT_EXCEEDED = 4;
+    public static final int CAUSE_USER_ALREADY_EXISTS = 5;
+    public static final int CAUSE_INVALID_PARAMETERS = 6;
+    public static final int CAUSE_UNKNOWN = 999;
+
 
     // interface handler
     private AWSLoginHandler mCallback;
 
     // control variables
     private String userName, userPassword;
+    private int currentProcessInResetPassword;
     private Context mContext;
     private CognitoUserPool mCognitoUserPool;
     private CognitoUser mCognitoUser;
@@ -102,123 +129,196 @@ public class AWSLoginModel {
 
         @Override
         public void onFailure(Exception exception) {
-            mCallback.onFailure(PROCESS_SIGN_IN, exception);
+            mCallback.onFailure(PROCESS_SIGN_IN, exception, CAUSE_LIMIT_EXCEEDED, "Limit exceeded. Wait to try again");
         }
     };
 
-
-    /**
-     * Constructs the model for login functions in AWS Mobile Hub.
-     *  @param context         REQUIRED: Android application context.
-     * @param callback        REQUIRED: Callback handler for login operations.
-     *
-     */
-    public AWSLoginModel(AuthenticationActivity context, AWSLoginHandler callback) {
-        mContext = context;
-        IdentityManager identityManager = IdentityManager.getDefaultIdentityManager();
-        try{
-            JSONObject myJSON = identityManager.getConfiguration().optJsonObject("CognitoUserPool");
-            final String COGNITO_POOL_ID = myJSON.getString("PoolId");
-            final String COGNITO_CLIENT_ID = myJSON.getString("AppClientId");
-            final String COGNITO_CLIENT_SECRET = myJSON.getString("AppClientSecret");
-            final String REGION = myJSON.getString("Region");
-            mCognitoUserPool = new CognitoUserPool(context, COGNITO_POOL_ID, COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET, Regions.fromName(REGION));
-        } catch (JSONException e) {
-            e.printStackTrace();
+    private final ForgotPasswordHandler forgotPasswordHandler = new ForgotPasswordHandler() {
+        @Override
+        public void onSuccess() {
+            mCallback.onResetUserPasswordSuccess();
         }
 
-        mCallback = callback;
-    }
+        @Override
+        public void getResetCode(ForgotPasswordContinuation continuation) {
+            forgotPasswordContinuation = continuation;
+            mCallback.onRequestResetUserPasswordSuccess(continuation.getParameters().getDeliveryMedium());
+        }
 
-    /**
-     * Registers new user to the AWS Cognito User Pool.
-     *
-     * This will trigger {@link AWSLoginHandler} interface defined when the constructor was called.
-     *
-     * @param userName         REQUIRED: Username to be registered. Must be unique in the User Pool.
-     * @param userEmail        REQUIRED: E-mail to be registered. Must be unique in the User Pool.
-     * @param userPassword     REQUIRED: Password of this new account.
-     *
-     */
-    public void registerUser(String userName, String userEmail, String userPassword) {
-        CognitoUserAttributes userAttributes = new CognitoUserAttributes();
-        userAttributes.addAttribute(ATTR_EMAIL, userEmail);
+        @Override
+        public void onFailure(Exception exception) {
+            if (exception instanceof LimitExceededException) {
+                mCallback.onFailure(currentProcessInResetPassword, exception, CAUSE_LIMIT_EXCEEDED, "Limit exceeded. Wait to try again");
+            } else if (exception instanceof UserNotFoundException) {
+                mCallback.onFailure(currentProcessInResetPassword, exception, CAUSE_USER_NOT_FOUND, MESSAGE_USER_NOT_FOUND);
+            } else if (exception instanceof InvalidParameterException) {
+                mCallback.onFailure(currentProcessInResetPassword, exception, CAUSE_INVALID_PARAMETERS, "User not confirmed. Cannot send e-mail.");
+            } else {
+                mCallback.onFailure(currentProcessInResetPassword, exception, CAUSE_UNKNOWN, MESSAGE_UNKNOWN_ERROR);
+            }
+        }
+    };
+        private ForgotPasswordContinuation forgotPasswordContinuation;
 
-        final SignUpHandler signUpHandler = new SignUpHandler() {
-            @Override
-            public void onSuccess(CognitoUser user, boolean signUpConfirmationState, CognitoUserCodeDeliveryDetails cognitoUserCodeDeliveryDetails) {
-                mCognitoUser = user;
-                mCallback.onRegisterSuccess(!signUpConfirmationState);
+        /**
+         * Constructs the model for login functions in AWS Mobile Hub.
+         *
+         * @param context  REQUIRED: Android application context.
+         * @param callback REQUIRED: Callback handler for login operations.
+         */
+        public AWSLoginModel(AuthenticationActivity context, AWSLoginHandler callback) {
+            mContext = context;
+            IdentityManager identityManager = IdentityManager.getDefaultIdentityManager();
+            try {
+                JSONObject myJSON = identityManager.getConfiguration().optJsonObject("CognitoUserPool");
+                final String COGNITO_POOL_ID = myJSON.getString("PoolId");
+                final String COGNITO_CLIENT_ID = myJSON.getString("AppClientId");
+                final String COGNITO_CLIENT_SECRET = myJSON.getString("AppClientSecret");
+                final String REGION = myJSON.getString("Region");
+                mCognitoUserPool = new CognitoUserPool(context, COGNITO_POOL_ID, COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET, Regions.fromName(REGION));
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
 
-            @Override
-            public void onFailure(Exception exception) {
-                mCallback.onFailure(PROCESS_REGISTER, exception);
-            }
-        };
+            mCallback = callback;
+        }
 
-        mCognitoUserPool.signUpInBackground(userName, userPassword, userAttributes, null, signUpHandler);
+        /**
+         * Registers new user to the AWS Cognito User Pool.
+         * <p>
+         * This will trigger {@link AWSLoginHandler} interface defined when the constructor was called.
+         *
+         * @param userName     REQUIRED: Username to be registered. Must be unique in the User Pool.
+         * @param userEmail    REQUIRED: E-mail to be registered. Must be unique in the User Pool.
+         * @param userPassword REQUIRED: Password of this new account.
+         */
+        public void registerUser(String userName, String userEmail, String userPassword) {
+            CognitoUserAttributes userAttributes = new CognitoUserAttributes();
+            userAttributes.addAttribute(ATTR_EMAIL, userEmail);
+
+            final SignUpHandler signUpHandler = new SignUpHandler() {
+                @Override
+                public void onSuccess(CognitoUser user, boolean signUpConfirmationState, CognitoUserCodeDeliveryDetails cognitoUserCodeDeliveryDetails) {
+                    mCognitoUser = user;
+                    mCallback.onRegisterSuccess(!signUpConfirmationState);
+                }
+
+                @Override
+                public void onFailure(Exception exception) {
+                    mCallback.onFailure(PROCESS_REGISTER, exception, CAUSE_LIMIT_EXCEEDED, "Limit exceeded. Wait to try again");
+                }
+            };
+
+            mCognitoUserPool.signUpInBackground(userName, userPassword, userAttributes, null, signUpHandler);
+        }
+
+        /**
+         * Confirms registration of the new user in AWS Cognito User Pool.
+         * <p>
+         * This will trigger {@link AWSLoginHandler} interface defined when the constructor was called.
+         *
+         * @param confirmationCode REQUIRED: Code sent from AWS to the user.
+         */
+        public void confirmRegistration(String confirmationCode) {
+            final GenericHandler confirmationHandler = new GenericHandler() {
+                @Override
+                public void onSuccess() {
+                    mCallback.onRegisterConfirmed();
+                }
+
+                @Override
+                public void onFailure(Exception exception) {
+                    mCallback.onFailure(PROCESS_CONFIRM_REGISTRATION, exception, CAUSE_LIMIT_EXCEEDED, "Limit exceeded. Wait to try again");
+                }
+            };
+
+            mCognitoUser.confirmSignUpInBackground(confirmationCode, false, confirmationHandler);
+        }
+
+        /**
+         * Sign in process. If succeeded, this will save the user name and e-mail in SharedPreference of
+         * this context.
+         * <p>
+         * This will trigger {@link AWSLoginHandler} interface defined when the constructor was called.
+         *
+         * @param userNameOrEmail REQUIRED: Username or e-mail.
+         * @param userPassword    REQUIRED: Password.
+         */
+        public void signInUser(String userNameOrEmail, String userPassword) {
+            this.userName = userNameOrEmail;
+            this.userPassword = userPassword;
+
+            mCognitoUser = mCognitoUserPool.getUser(userName);
+            mCognitoUser.getSessionInBackground(authenticationHandler);
+        }
+
+        /**
+         * Re-sends the confirmation code from the current user
+         */
+        public void resendConfirmationCode() {
+            mCognitoUser.resendConfirmationCodeInBackground(new VerificationHandler() {
+                @Override
+                public void onSuccess(CognitoUserCodeDeliveryDetails verificationCodeDeliveryMedium) {
+                    mCallback.onResendConfirmationCodeSuccess(verificationCodeDeliveryMedium.getDeliveryMedium());
+                }
+
+                @Override
+                public void onFailure(Exception exception) {
+                    mCallback.onFailure(PROCESS_RESEND_CONFIRMATION_CODE, exception, CAUSE_LIMIT_EXCEEDED, "Limit exceeded. Wait to try again");
+                }
+            });
+        }
+
+        /**
+         * Requests the reset of the user's password (in case of forgotten password).
+         * This method sends the reset code to the user.
+         *
+         * @param userName REQUIRED: Username.
+         */
+        public void requestResetUserPassword(String userName) {
+            currentProcessInResetPassword = PROCESS_REQUEST_RESET_PASSWORD;
+            mCognitoUser = mCognitoUserPool.getUser(userName);
+            mCognitoUser.forgotPasswordInBackground(forgotPasswordHandler);
+        }
+
+        /**
+         * Resets current user password if the resetCode matches with the one sent to the user (when
+         * requestResetUserPassword was called).
+         *
+         * @param resetCode   REQUIRED: should be same code received when request was called.
+         * @param newPassword REQUIRED: new password.
+         */
+        public void resetUserPasswordWithCode(String resetCode, String newPassword) {
+            currentProcessInResetPassword = PROCESS_RESET_PASSWORD;
+            forgotPasswordContinuation.setVerificationCode(resetCode);
+            forgotPasswordContinuation.setPassword(newPassword);
+            forgotPasswordContinuation.continueTask();
+        }
+
+    public static void doUserLogout() {
+        IdentityManager identityManager = IdentityManager.getDefaultIdentityManager();
+        identityManager.signOut();
     }
 
-    /**
-     * Confirms registration of the new user in AWS Cognito User Pool.
-     *
-     * This will trigger {@link AWSLoginHandler} interface defined when the constructor was called.
-     *
-     * @param confirmationCode      REQUIRED: Code sent from AWS to the user.
-     */
-    public void confirmRegistration(String confirmationCode) {
-        final GenericHandler confirmationHandler = new GenericHandler() {
-            @Override
-            public void onSuccess() {
-                mCallback.onRegisterConfirmed();
-            }
+        /**
+         * Gets the user name saved in SharedPreferences.
+         *
+         * @param context REQUIRED: Android application context.
+         * @return user name saved in SharedPreferences.
+         */
+        public static String getSavedUserName(Context context) {
+            SharedPreferences savedValues = context.getSharedPreferences(SHARED_PREFERENCE, Context.MODE_PRIVATE);
+            return savedValues.getString(PREFERENCE_USER_NAME, "");
+        }
 
-            @Override
-            public void onFailure(Exception exception) {
-                mCallback.onFailure(PROCESS_CONFIRM_REGISTRATION, exception);
-            }
-        };
-
-        mCognitoUser.confirmSignUpInBackground(confirmationCode, false, confirmationHandler);
+        /**
+         * Gets the user e-mail saved in SharedPreferences.
+         *
+         * @param context REQUIRED: Android application context.
+         * @return user e-mail saved in SharedPreferences.
+         */
+        public static String getSavedUserEmail(Context context) {
+            SharedPreferences savedValues = context.getSharedPreferences(SHARED_PREFERENCE, Context.MODE_PRIVATE);
+            return savedValues.getString(PREFERENCE_USER_EMAIL, "");
+        }
     }
-
-    /**
-     * Sign in process. If succeeded, this will save the user name and e-mail in SharedPreference of
-     * this context.
-     *
-     * This will trigger {@link AWSLoginHandler} interface defined when the constructor was called.
-     *
-     * @param userNameOrEmail        REQUIRED: Username or e-mail.
-     * @param userPassword           REQUIRED: Password.
-     */
-    public void signInUser(String userNameOrEmail, String userPassword) {
-        this.userName = userNameOrEmail;
-        this.userPassword = userPassword;
-
-        mCognitoUser = mCognitoUserPool.getUser(userName);
-        mCognitoUser.getSessionInBackground(authenticationHandler);
-    }
-
-    /**
-     * Gets the user name saved in SharedPreferences.
-     *
-     * @param context               REQUIRED: Android application context.
-     * @return                      user name saved in SharedPreferences.
-     */
-    public static String getSavedUserName(Context context) {
-        SharedPreferences savedValues = context.getSharedPreferences(SHARED_PREFERENCE, Context.MODE_PRIVATE);
-        return savedValues.getString(PREFERENCE_USER_NAME, "");
-    }
-
-    /**
-     * Gets the user e-mail saved in SharedPreferences.
-     *
-     * @param context               REQUIRED: Android application context.
-     * @return                      user e-mail saved in SharedPreferences.
-     */
-    public static String getSavedUserEmail(Context context) {
-        SharedPreferences savedValues = context.getSharedPreferences(SHARED_PREFERENCE, Context.MODE_PRIVATE);
-        return savedValues.getString(PREFERENCE_USER_EMAIL, "");
-    }
-}

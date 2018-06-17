@@ -23,27 +23,7 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        /*
-        // Calls the AWSMobileClient and initialises it in the app.
-        AWSMobileClient.getInstance().initialize(SplashActivity.this, new AWSStartupHandler() {
-            @Override
-            public void onComplete(AWSStartupResult awsStartupResult) {
-                IdentityManager identityManager = IdentityManager.getDefaultIdentityManager();
-                identityManager.resumeSession(SplashActivity.this, new StartupAuthResultHandler() {
-                    @Override
-                    public void onComplete(StartupAuthResult authResults) {
-                        if (authResults.isUserSignedIn()) {
-                            startActivity(new Intent(SplashActivity.this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-                        } else {
-                            startActivity(new Intent(SplashActivity.this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-                        }
-                    }
-                }, 300);
-            }
-        }).execute();
-    }
-    */
-
+        // This is ensures that the app goes between main UI and authentication UI when the user signs in and out.
         AWSMobileClient.getInstance().initialize(SplashActivity.this, new AWSStartupHandler() {
             @Override
             public void onComplete(AWSStartupResult awsStartupResult) {
@@ -57,7 +37,7 @@ public class SplashActivity extends AppCompatActivity {
                                 if (authResults.isUserSignedIn()) {
                                     startActivity(new Intent (SplashActivity.this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
                                 } else {
-                                    startActivity(new Intent (SplashActivity.this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                                    startActivity(new Intent (SplashActivity.this, AuthenticationActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
                                 }
                             }
                         }, 300);

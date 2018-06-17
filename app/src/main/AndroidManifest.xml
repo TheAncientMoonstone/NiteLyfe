@@ -15,10 +15,7 @@
         android:theme="@style/AppTheme">
 
         <activity android:name=".AuthenticationActivity"
-                  android:label="User Authentication Screen">
-            <intent-filter>
-               <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
+                  android:label="User Login Screen">
         </activity>
 
         <activity android:name=".MainActivity"

@@ -1,12 +1,14 @@
 package com.lyfeforce.tim.nitelyfe;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.TextView;
 
 import com.lyfeforce.tim.nitelyfe.AWS.AWSLoginModel;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     /*
      * This the landing page when the user has successfully logged into the app.
@@ -32,5 +34,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         moveTaskToBack(true);
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.logoutButton:
+                logoutAction();
+                break;
+        }
+    }
+
+    private void logoutAction() {
+        AWSLoginModel.doUserLogout();
+        startActivity(new Intent(MainActivity.this, AuthenticationActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
     }
 }
