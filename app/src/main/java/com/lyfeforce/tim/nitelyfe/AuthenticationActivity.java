@@ -125,11 +125,22 @@ public class AuthenticationActivity extends AppCompatActivity implements View.On
     public void onSignInSuccess() {
         AuthenticationActivity.this.startActivity(new Intent(AuthenticationActivity.this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
     }
-
+/*
     @Override
     public void onFailure(int process, Exception exception, int causeLimitExceeded, String s) {
         Toast.makeText(AuthenticationActivity.this,  s, Toast.LENGTH_LONG).show();
         if (causeLimitExceeded != AWSLoginModel.CAUSE_MUST_CONFIRM_FIRST) {
+            exception.printStackTrace();
+        } else {
+            showConfirm(true);
+        }
+    }
+*/
+
+    @Override
+    public void onFailure(int process, Exception exception, int cause, String message) {
+        Toast.makeText(AuthenticationActivity.this, message, Toast.LENGTH_LONG).show();
+        if (cause != AWSLoginModel.CAUSE_MUST_CONFIRM_FIRST) {
             exception.printStackTrace();
         } else {
             showConfirm(true);
